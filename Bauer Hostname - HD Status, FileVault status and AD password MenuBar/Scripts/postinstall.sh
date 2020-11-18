@@ -1,63 +1,44 @@
-#!/bin/bash
+#!/bin/zsh
 
-#Remove redundant content based on model/OS version and NoMAD status
-#Load the launch agent so that BitBar works after the package install
+########################################################################
+#      Install Bauer Menu Bar Application (BitBar) - postinstall       #
+################## Written by Phil Walker Nov 2020 #####################
+########################################################################
 
 ########################################################################
 #                            Variables                                 #
 ########################################################################
 
-#Get the logged in user
-loggedInUser=$(python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
-
-#ADPassword and launchSysPrefstoUserPane script locations
-BitBarAD="/Library/Application Support/JAMF/bitbar/BitBarDistro.app/Contents/MacOS/ADPassword.1d.sh"
-LaunchSysPrefs="/usr/local/launchSysPrefstoUserPane.sh"
-
-#Mac model and marketing name
-macModel=$(sysctl -n hw.model)
-macModelFull=$(system_profiler SPHardwareDataType | grep "Model Name" | sed 's/Model Name: //' | xargs)
-
-#OS Version Full and Short
-OSFull=$(sw_vers -productVersion)
-OSShort=$(sw_vers -productVersion | awk -F. '{print $2}')
-
-#Path to NoMAD Login AD bundle
-noLoADBundle="/Library/Security/SecurityAgentPlugins/NoMADLoginAD.bundle"
+# Get the logged in user
+loggedInUser=$(stat -f %Su /dev/console)
+# Get the logged in users ID
+loggedInUserID=$(id -u "$loggedInUser")
+# Current Launch Agent
+launchAgent="/Library/LaunchAgents/com.bauer.menubar.app.plist"
 
 ########################################################################
 #                            Functions                                 #
 ########################################################################
 
-function checkScriptRemoval()
-{
-#Remove the ADPassword and LaunchSysPrefs scripts
-
-#re-populate ADPassword and launchSysPrefstoUserPane script variables
-BitBarAD="/Library/Application Support/JAMF/bitbar/BitBarDistro.app/Contents/MacOS/ADPassword.1d.sh"
-LaunchSysPrefs="/usr/local/launchSysPrefstoUserPane.sh"
-
-if [[ ! -a "$BitBarAD" ]] && [[ ! -a $LaunchSysPrefs ]]; then
-
-  /bin/echo "ADPassword and LaunchSysPrefs scripts deleted successfully"
-
+function runAsUser ()
+{  
+# Run commands as the logged in user
+if [[ "$loggedInUser" == "" ]] || [[ "$loggedInUser" == "root" ]]; then
+    echo "No user logged in, unable to run commands as a user"
 else
-
-  /bin/echo "ADPassword and LaunchSysPrefs scripts removal FAILED. post install clean up tasks have not completed successfully"
-  exit 1
-
+    launchctl asuser "$loggedInUserID" sudo -u "$loggedInUser" "$@"
 fi
 }
 
-function launchAgentStatus()
+function launchAgentStatus ()
 {
-#Get the status of the Bauer menu bar Launch Agent
-launchAgent=$(su -l "$loggedInUser" -c "launchctl list | grep "hostname" | cut -f3")
-
-if [[ "$launchAgent" == "com.hostname.menubar" ]]; then
-  /bin/echo "Bauer menu bar Launch Agent running"
+# Get the status of the Bauer Menu Bar Launch Agent
+currentStatus=$(runAsUser launchctl list | grep "com.bauer.menubar.app" | awk '{print $3}')
+if [[ "$currentStatus" != "" ]]; then
+    echo "Bauer Menu Bar Launch Agent running"
 else
-  /bin/echo "Bauer menu bar Launch Agent currently stopped/unloaded"
+    echo "Bauer Menu Bar Launch Agent not running!"
+    echo "The app should launch after the next user login"
 fi
 }
 
@@ -65,31 +46,14 @@ fi
 #                         Script starts here                           #
 ########################################################################
 
-#Remove the ADPassword and LaunchSysPrefs scripts if NoLoAD is installed or OS is 10.14+
-
-if [[ "$macModel" =~ "MacBook" ]] && [[ "$OSShort" == "12" ]]; then
-  /bin/echo "${macModelFull} running ${OSFull}"
-  if [[ -d "$noLoADBundle" ]]; then
-    /bin/echo "NoMAD Login AD installed, ADPassword and LaunchSysPrefs scripts not required"
-    #Remove ADPassword script
-      rm -f "$BitBarAD"
-    #Remove LaunchSysPrefs script
-      rm -f "$LaunchSysPrefs"
-      checkScriptRemoval
-  fi
-elif [[ "$OSShort" -ge "14" ]]; then
-  /bin/echo "OS version is $OSFull, ADPassword and LaunchSysPrefs scripts not required"
-  #Remove ADPassword script
-    rm -f "$BitBarAD"
-  #Remove LaunchSysPrefs script
-    rm -f "$LaunchSysPrefs"
-    checkScriptRemoval
+if [[ "$loggedInUser" == "root" ]] || [[ "$loggedInUser" == "" ]]; then
+    echo "No user logged in, nothing to do"
+else
+    echo "${loggedInUser} logged in, bootstrapping the Launch Agent..."
+    # Bootstrap the Launch Agent
+    launchctl bootstrap gui/"$loggedInUserID" "$launchAgent"
+    sleep 2
+    # Check the Launch Agent is now running
+    launchAgentStatus
 fi
-
-su -l "$loggedInUser" -c "launchctl load /Library/LaunchAgents/com.hostname.menubar.plist"
-su -l "$loggedInUser" -c "launchctl start /Library/LaunchAgents/com.hostname.menubar.plist"
-
-sleep 2
-launchAgentStatus
-
 exit 0
