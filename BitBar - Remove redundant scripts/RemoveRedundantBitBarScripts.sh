@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ########################################################################
 #                Remove Redundant BitBar scripts                       #
@@ -20,14 +20,12 @@ LaunchSysPrefs="/usr/local/launchSysPrefstoUserPane.sh"
 
 function checkScripts ()
 {
-
 if [[ ! -e "$BitBarAD" ]] && [[ ! -e $LaunchSysPrefs ]]; then
-  echo "Redundant BitBar scripts not found, nothing to do"
-  exit 0
+    echo "Redundant BitBar scripts not found, nothing to do"
+    exit 0
 else
-  echo "Redundant BitBar scripts found"
+    echo "Redundant BitBar scripts found"
 fi
-
 }
 
 ########################################################################
@@ -36,25 +34,17 @@ fi
 
 # Check ADPassword and LaunchSysPrefs scripts are present
 checkScripts
-
 echo "Removing redundant scripts..."
-
 # Remove ADPassword script
 rm -f "$BitBarAD"
 # Remove LaunchSysPrefs script
 rm -f "$LaunchSysPrefs"
-
 # Check removal was successful
 echo "Checking removal was successful"
 if [[ ! -e "$BitBarAD" ]] && [[ ! -e $LaunchSysPrefs ]]; then
-
-  echo "Redundant BitBar scripts deleted successfully"
-
+    echo "Redundant BitBar scripts deleted successfully"
 else
-
-  echo "Redundant BitBar scripts removal FAILED"
-  exit 1
-
+    echo "Redundant BitBar scripts removal FAILED"
+    exit 1
 fi
-
 exit 0
