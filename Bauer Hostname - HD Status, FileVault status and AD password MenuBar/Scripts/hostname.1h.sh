@@ -18,18 +18,18 @@
 loggedInUser=$(stat -f %Su /dev/console)
 # Get OS version - full, short and build
 osFull=$(sw_vers -productVersion)
-osShort=$(sw_vers -productVersion | awk -F. '{print $2}')
+osShort=$(SYSTEM_VERSION_COMPAT=1 sw_vers -productVersion | awk -F. '{print $2}')
 osBuild=$(sw_vers -buildVersion)
 # Get hostname
 hostName=$(scutil --get ComputerName)
 # Get the model
-Mac_Model=$(sysctl -n hw.model)
+macModel=$(sysctl -n hw.model)
 # Get the IP addresses for all active adaptors
 ipAddresses=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
 # Get available disk space on boot volume
-macHDTotalBootDriveSizeHuman=$(df -kH / | awk {'print $2'} | tail -1)
-macHDAvailable=$(df -g / | awk {'print $4'} | tail -1)
-macHDAvailableHuman=$(df -kH / | awk {'print $4'} | tail -1)
+macHDTotalBootDriveSizeHuman=$(df -kH / | awk '{print $2}' | tail -1)
+macHDAvailable=$(df -g / | awk '{print $4}' | tail -1)
+macHDAvailableHuman=$(df -kH / | awk '{print $4}' | tail -1)
 # Check which command to use for disk usage percentage due to changes in Catalina
 if [[ "$osShort" -ge "15" ]]; then
 	macHDPercentUsed=$(df -g /System/Volumes/Data/ | tail -1 | awk '{print $5}')
@@ -38,10 +38,10 @@ else
 fi
 # Get Mac uptime in days only
 upTimeBasic=$(uptime | awk '{ print $3, $4 }' | grep "days" | sed 's/days/ /;s/,/ /g')
-# Check for Kernal Panic
+# Check for Kernal Panics
 kernelPanic=$([ -f /Library/Logs/DiagnosticReports/*.panic ] && echo "Yes" || echo "No")
 # Check SMART status
-smartStatus=$(diskutil info disk0 | grep SMART | awk {'print $3'})
+smartStatus=$(diskutil info disk0 | grep SMART | awk '{print $3}')
 # Generate base64 images for self service and mac models
 imageMacHDIcon='iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEgAACxIB0t1+/AAAABx0RVh0U29mdHdhcmUAQWRvYmUgRmlyZXdvcmtzIENTNui8sowAAANfSURBVDiNrZRfSFtXHMc/5yYm6k0zkyydNrlZHdGMFeOKk7l1oPvjfJGN7WEIq4WyPw++FEp8EDqmMNiYPq0PPvSljK2Uwv6B6JwPZR0KxTqlMpssdQ7stLS7193qtSbx3rMXK+oie/HAD87hHD58f19+5yuklBzkUg6UBrh3HhoaGuK6rl+2LCsRCoWk4zjFVSgKuq4LVVUzoVCoY2pq6vajO7Gz5erq6uvBYPA5TdOU2dlZpJRYloXYakTioKoqQgjq6upYXFx0DMO4sbCw8HxRYDAYzLW3t3tSqRQnTrzIM08/y1tvv0k8EQXgduYO3337A3PpGcbHJxgYGGBoaChvGIa3KDCRSKw6juMzDJ2Od07R/fG7LG1cRTf/BCD02FGOlL5Mf9/XXL7yJcFgCEVR1jKZzKGiHkopWV9fp631Dc71dzD66yfYBXC5PADc+/svfi8Z51x/Dysr//DzL2Ooqrrb373AEreXsz2nuTZ3HuF4EUJBsFVCQThers2d52zPaUrcXvaO3S6gaZrUJxsoP3wf84GBLQuE/QlOtlzgZMsFwv4EtixgPjAoP3yf+mQDpmnuD7Qsi1gsyvrmXVyKB9su0Hr8DJcuDstLF4dl6/Ez2HYBl+JhffMusVgUy7J2AXd5KIRgc9NGCPd2K6sPdeLx2u39I2uEcG+9Ffsr9Pv9ZLNZVJeGI/N43GX8ND1ALPkQrc7ix6lPKXGX4sg8qksjm83i9/v3B/p8Pn67dZM7t1xoVbUU7ByKIllaWhb39CVxNHoMb2kJVeGnmJ/eZC59E5/Ptz8QwOt10/fR5xx7/D0qKvzEtUa++mKaU+2fMXHFQ6XdwevJPr7/ZgTbLqAoexBSyu2qqalZra2tlZWVT8hXWtrkxPWr8g9jRK5auvzg/Q+lQMgjVZp87dU2OTIyLJubm2UkElndyfjPT7Ft2weQy20gcPNC00vUJJ4kmawnn8/T29vL/Pw8qVQKgMHBwbW1tbVDRRUGAoFcZ2ennJmZkZFIRMbjcRmNRmU4HJaBQEB2dXXJsbEx2d3dLUdHR2VjY6OMxWK5fRXuTRuXy7VrpEzTRNM0mpqamJycZHl52SkrK7uRTqeLp83/5aEQgo2NDVZWVqioqBDl5eUZoCOdThfPw4NY/wKiXaptTtg6iAAAAABJRU5ErkJggg=='
 imageSelfService='iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAE4UlEQVR42p2Wa2xTZRzGEQGNkhhjjF8wWQh+MEY/mGBi4geijuDtC7o5AoJDxWiMgMSgDBATICgMYQsanDAnyBywCR2wS3GXdmNbu1LG2Ohs161b15b1sl7O6bm855zH/zlzY8VtQd7kyWl7znl+//f5v+c9nTNnmgFgHWkQ0BRFZYw+e0mlpJWkJ0j3zbnXQTcv1jStNiWNwemvRZPnJBxDFxFK9mtMlX10/nfSx6Sn78X8ftJ2iQnyyc5tKGx6F983rsSBplwcafkAFc5v0RuyahLjebrOR4WY6PgmacHdAh5XVbW5deC0YTyT/nDuAi8lkBYkCJKMfyPcQXqO9OhsgBfTUipVavtiVoC5rwRMkXCm3onyS51ovz6A0WhSb1iEPKpJ60kLpwMc9kacKLKundH8kGU1xdSCWJzDtkMmbD14HgVF1dj7cx1+M3VgwB8BRZekJL4mv/lTzR9WNCVq6T9FRm9nGPaHHbD0l+NYx0aU2bcgkQ7DfOWmYT6d2rsGQIAhURSfmgrIF+QUznbtyai4znUUEyNN5wMJNxRFQUWNY3IGd2r/8ctIcqIWj8fzJsznkZpUTcFoygeLtxw/XdmAA425GB67CZHx6PCdw9BYjwGiCJDiRAyORFBpvobtRRcyAHsormA4gVAo9PkE4AW6KcBi18FSg1CpUr2JI/E+SCyNGB9AcUs+qm/8AJXMI5R/YDRhgBRVRfGp5gzAwbIGfYVJdrs9WzdfQNoCJS1ytN45yj/t3Alp4CxUPmhULCuC0dhQwgtBlHGi2oZdRy5CkhhCVKne4KmAWmsvOI67arPZntQBS6kh5+Vgk8bVv4xJUf4s3DleJcWmKqIB0yvu/tuPFodHbyTarnlRcLg6AxCN82okEikuKip6QAfs11QW5h1fYSqAb3kfqhSHHGgAZ86G6K0wYCyZgsLxk/FYCbTvl/rJPpScadXBYz6fL2cif5eS7AffnJsBEHqLjYoZ9SHdtRvyqA2qKGKoYDduHTsJNS1Qr2TIKQ6RWAr2Gz6crr2KHk+AopN6KisrF00ABHmkDtzl1zNnYP+Sqh2ERlVqjKOjQoYM3g2bECj80QDE/2rGwGdbEa26QNcmIdF5xlQEAoFDZD13AhCX/ZcI8FoGYFzZ46BYlwFSad/RozFE332bt8P16kpDfW+tRtRUC0WWZar++ckHTN/clISHIlo1DWBcUrCZejCI0NFfMVbXANEfAN/jgmv5O7cBb+QhdrEesViskWxvbxHpdDpPVeUR+VabsUT/A6DeqExA9KwJrhU5hpF71Udw566fNNflod/EIb/W3d29NmOD6+zsnE/U9xhjbkVOCbK/RuNtG8E1Ecy8HKK7lJYpB/8332UY3qnhnftAxXocDseS6XbquQR6lh7tTclkslIU+CAb66WH7TQtyRG9Mrhz1s8KSLY7tGg0eqKxsXHhbO+cuWaz+ZGGhoZn3G73Zo5LOqmhCqMZhCv+hGfdp9OaD24qgCwI3PDw8Ifkcffv66ysrActFssrVFkZLY5+JtOqv9ql+XcXwrPmEyP3oR17Id0a1XiebyspKVl0T38Eli1bNo+mviQYDObTFnxc4HmXNBpm0khQk3k+TtvC+ZqamqX/q/qZhslkeog2scVWq3VFa2vrmqqqqpfKysoem+n6fwD6JpzDfYBxgQAAAABJRU5ErkJggg=='
@@ -55,18 +55,24 @@ imageMacPro2013='iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAA
 function getRealName ()
 {
 # Find correct format for real name of logged in user
-loggedInUserUID=$(dscl . -read /Users/$loggedInUser UniqueID | awk '{print $2}')
-
+loggedInUserUID=$(id -u "$loggedInUser")
 if [[ "$loggedInUser" =~ "admin" ]];then
-	userRealName=$(dscl . -read /Users/$loggedInUser | grep -A1 "RealName:" | sed -n '2p' | awk '{print $1, $2, $3}' | sed s/,//)
+	userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk '{print $1, $2, $3}' | sed s/,//)
 else
 	if [[ "$loggedInUserUID" -lt "1000" ]]; then
-		userRealName=$(dscl . -read /Users/$loggedInUser | grep -A1 "RealName:" | sed -n '2p' | awk '{print $1, $2}' | sed s/,//)
+		userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk '{print $1, $2}' | sed s/,//)
   	else
-    	userRealName=$(dscl . -read /Users/$loggedInUser | grep -A1 "RealName:" | sed -n '2p' | awk '{print $2, $1}' | sed s/,//)
+    	userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk '{print $2, $1}' | sed s/,//)
   	fi
 fi
+}
 
+function darkModeEnabled ()
+{
+darkModeStatus=$(defaults read -g AppleInterfaceStyle 2>/dev/null)
+if [[ "$darkModeStatus" == "Dark" ]]; then
+	uptimeColour="white"
+fi
 }
 
 function checkUpTime ()
@@ -89,11 +95,11 @@ DaysUp=$(($upTime/$daysVal))
 HrsUp=$(($upTime/$hrsVal%24))
 MinsUp=$(($upTime%$hrsVal/$minsVal))
 
-if [[ $DaysUp == "0" && $HrssUp == "0" && $MinsUp == "0" ]]; then
+if [[ "$DaysUp" == "0" && "$HrsUp" == "0" && "$MinsUp" == "0" ]]; then
 	timeup="less than a minute"
-elif [[ $DaysUp == "0" && $HrsUp == "0" ]]; then
+elif [[ "$DaysUp" == "0" && "$HrsUp" == "0" ]]; then
 	timeup="$MinsUp"m""
-elif [[ $DaysUp == "0" ]]; then
+elif [[ "$DaysUp" == "0" ]]; then
 	timeup="$HrsUp"h" $MinsUp"m""
 else
 	timeup="$DaysUp"d" $HrsUp"h" $MinsUp"m""
@@ -103,11 +109,11 @@ fi
 function checkStatus ()
 {
 # Checks the status of the HD and then sets the icon and colour of the hostname that appears in the menu bar
-if [[ $macHDAvailable -le "5" || $smartStatus == "Failed" || $upTimeBasic -ge "6" ]]; then
+if [[ "$macHDAvailable" -le "5" || "$smartStatus" == "Failed" || "$upTimeBasic" -ge "6" ]]; then
 	status="❗️"
 	statusColour="red"
 	uptimeColour="red"
-elif [ $macHDAvailable -le "15" ]; then
+elif [[ "$macHDAvailable" -le "15" ]]; then
 	status="⚠️"
 	statusColour=""
 else
@@ -115,13 +121,13 @@ else
 	statusColour=""
 fi
 # Checks the model and sets the emoji for desktop or laptop to be rendered next to the Mac OS details
-if [[ $Mac_Model =~ "MacBook" ]]; then
+if [[ "$macModel" =~ "MacBook" ]]; then
 	macModelIcon="💻"
-elif [[ $Mac_Model =~ "iMac" ]]; then
+elif [[ "$macModel" =~ "iMac" ]]; then
     macModelIcon="🖥"
-elif [[ $Mac_Model == "MacPro3,1" ]] || [[ $Mac_Model == "MacPro4,1" ]] || [[ $Mac_Model == "MacPro5,1" ]]; then
+elif [[ "$macModel" == "MacPro3,1" ]] || [[ "$macModel" == "MacPro4,1" ]] || [[ "$macModel" == "MacPro5,1" ]]; then
     macModelIcon="macOS $osFull ($osBuild) | image=$imageMacPro"
-elif [[ $Mac_Model == "MacPro6,1" ]]; then
+elif [[ "$macModel" == "MacPro6,1" ]]; then
     macModelIcon="macOS $osFull ($osBuild) | image=$imageMacPro2013"
 else
 	macModelIcon=""
@@ -149,7 +155,7 @@ function menuSystem ()
 {
 # Display system details for first line of sub menu
 echo "$macModelIcon macOS $osFull ($osBuild)"
-echo "-- Uptime $timeup | color="$uptimeColour""
+echo "-- Uptime $timeup | color=$uptimeColour"
 }
 
 function menuNetwork ()
@@ -161,36 +167,36 @@ echo "IP Address" $ipAddresses
 function menuStorage ()
 {
 # Check for space available and change the icon that is rendered in the sub menu - less than 5GB and less than 10GB
-if [[ $macHDAvailable -le "5" ]]; then
+if [[ "$macHDAvailable" -le "5" ]]; then
 	jamfHelperLowDiskSpace
-	echo "❗️ Macintosh HD" $macHDPercentUsed "Used" $macHDAvailableHuman "Available | color=red href=https://mediavine.bauermedia.co.uk/Interact/Pages/Content/Document.aspx?id=3084"
-elif [[ $macHDAvailable -le "10" ]]; then
-	echo "⚠️ Macintosh HD" $macHDPercentUsed "Used" $macHDAvailableHuman "Available | color=orange href=https://mediavine.bauermedia.co.uk/Interact/Pages/Content/Document.aspx?id=3084"
+	echo "❗️ Macintosh HD" "$macHDPercentUsed" "Used" "$macHDAvailableHuman" "Available | color=red href=https://mediavine.bauermedia.co.uk/Interact/Pages/Content/Document.aspx?id=3084"
+elif [[ "$macHDAvailable" -le "10" ]]; then
+	echo "⚠️ Macintosh HD" "$macHDPercentUsed" "Used" "$macHDAvailableHuman" "Available | color=orange href=https://mediavine.bauermedia.co.uk/Interact/Pages/Content/Document.aspx?id=3084"
 else
-	echo "Macintosh HD" $macHDPercentUsed "Used" $macHDAvailableHuman "Available | image=$imageMacHDIcon color=green href=https://mediavine.bauermedia.co.uk/Interact/Pages/Content/Document.aspx?id=3084"
+	echo "Macintosh HD" "$macHDPercentUsed" "Used" "$macHDAvailableHuman" "Available | image=$imageMacHDIcon color=green href=https://mediavine.bauermedia.co.uk/Interact/Pages/Content/Document.aspx?id=3084"
 fi
-
-if [[ $smartStatus == "Failed" ]]; then
-	echo "⚠️ SMART Status" $smartStatus "| color=red"
+# Check SMART status
+if [[ "$smartStatus" == "Failed" ]]; then
+	echo "⚠️ SMART Status" "$smartStatus" "| color=red"
 fi
 }
 
 function menuFV ()
 {
 # Display FileVault status (MacBooks only)
-if [[ $Mac_Model =~ "MacBook" ]]; then
+if [[ "$macModel" =~ "MacBook" ]]; then
 	fvStatus=$(fdesetup status | grep "FileVault" | head -1)
     fvEncryptionStatus=$(fdesetup status | grep "Encryption")
     fvDecryptionStatus=$(fdesetup status | grep "Decryption")
     if [[ "$fvStatus" == "FileVault is On." ]]; then
         echo "✅ Encryption On |color=green"
-        if [[ -n "⌛️ $fvEncryptionStatus" ]]; then
-            echo "$fvEncryptionStatus"
+        if [[ -n "$fvEncryptionStatus" ]]; then
+            echo "⌛️ $fvEncryptionStatus"
         fi
     else
         echo "⚠️ Encryption Off |color=red"
-        if [[ -n "⌛️ $FVDecryptionStatus" ]]; then
-            echo "$fvDecryptionStatus"
+        if [[ -n "$fvDecryptionStatus" ]]; then
+            echo "⌛️ $fvDecryptionStatus"
         fi
     fi
 fi
@@ -199,10 +205,10 @@ fi
 function menuHealth ()
 {
 # Display warnings based on uptime or KP's	
-if [[ $upTimeBasic -ge "6" ]]; then
+if [[ "$upTimeBasic" -ge "6" ]]; then
 	echo "❗️ Your Mac needs a restart | color=red"
 fi
-if [[ $kernelPanic == "Yes" ]]; then
+if [[ "$kernelPanic" == "Yes" ]]; then
 	echo "❗️ This Mac has suffered a Kernel Panic | color=red"
 fi
 }
@@ -224,16 +230,17 @@ fi
 
 # Get the logged in users real name for jamf Helper windows and admin check
 getRealName
-#
+# Check for Dark Mode
+darkModeEnabled
 # Check the status of the storage and set the required colour and icons
 checkStatus
 # Get the uptime of the Mac to be populated in submenu
 checkUpTime
 # Build the menubar
-if [ -z $statusColour ]; then
-    echo $status$hostName
+if [[ -z "$statusColour" ]]; then
+    echo "$status$hostName"
 else
-    echo $status$hostName "| color="$statusColour""
+    echo "$status$hostName | color=$statusColour"
 fi
 # Add sub menu content
 echo "---"
