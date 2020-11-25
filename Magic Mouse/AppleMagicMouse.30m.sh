@@ -8,43 +8,44 @@
 
 # Works with Magic Mouse and Magic Mouse 2
 
-#Magic Mouse battery level
-MAGIC_MOUSE=$(ioreg -c BNBMouseDevice |grep '"BatteryPercent" =' | grep -F -v \{ | sed 's/[^[:digit:]]//g')
-#Magic Mouse 2 battery level
-MAGIC_MOUSE2=$(ioreg -c AppleDeviceManagementHIDEventService -r -l | grep -i "Mouse" -A 20 | grep "BatteryPercent" | grep -F -v \{ | sed 's/[^[:digit:]]//g')
-#Check if a Magic Mouse 2 is connected via USB
-CHARGE=$(ioreg -p IOUSB -w0 | sed 's/[^o]*o //; s/@.*$//' | grep -v '^Root.*' | grep "Magic*")
+# Magic Mouse battery level
+legacyMagicMouse=$(ioreg -c BNBMouseDevice |grep '"BatteryPercent" =' | grep -F -v \{ | sed 's/[^[:digit:]]//g')
+# Magic Mouse 2 battery level
+MagicMouse=$(ioreg -c AppleDeviceManagementHIDEventService -r -l | grep -i "Mouse" -A 20 | grep "BatteryPercent" | grep -F -v \{ | sed 's/[^[:digit:]]//g')
+# Check if a Magic Mouse 2 is connected via USB
+chargeStatus=$(ioreg -p IOUSB -w0 | sed 's/[^o]*o //; s/@.*$//' | grep -v '^Root.*' | grep '^Magic')
 
 function chargeStatus() {
-#display lightning icon if Magic Mouse 2 is connected via USB
-if [[ $CHARGE == "Magic Mouse 2" ]]; then
+# display lightning icon if Magic Mouse 2 is connected via USB
+if [[ "$chargeStatus" == "Magic Mouse 2" ]]; then
   echo "⚡️"
 fi
 }
 
 function magicMouse() {
-#Set the colour based on the remaining charge for either mouse
-if [ $MAGIC_MOUSE ]; then
-  if [ $MAGIC_MOUSE -le 20 ]; then
-    echo "🖱$MAGIC_MOUSE% | color=red"
+# Set the colour based on the remaining charge for either mouse
+if [[ "$legacyMagicMouse" != "" ]]; then
+  if [[ "$legacyMagicMouse" -le 20 ]]; then
+    echo "🖱${legacyMagicMouse}% | color=red"
   else
-    echo "🖱$MAGIC_MOUSE%"
+    echo "🖱${legacyMagicMouse}%"
   fi
-elif [ $MAGIC_MOUSE2 ]; then
-  if [ $MAGIC_MOUSE2 -le 20 ]; then
-    echo "🖱$MAGIC_MOUSE2% | color=red"
+fi
+if [[ "$MagicMouse" != "" ]]; then
+  if [[ "$MagicMouse" -le 20 ]]; then
+    echo "🖱${MagicMouse}% | color=red"
   else
-    echo "🖱$MAGIC_MOUSE2%"
+    echo "🖱${MagicMouse}%"
   fi
 fi
 }
 
 function chargeRequired() {
-#If using an Apple Magic Mouse 2 show additional info if the battery level is low
-if [ $MAGIC_MOUSE2 ]; then
-  if [ $MAGIC_MOUSE2 -le 20 -a $MAGIC_MOUSE2 -ge 11 ]; then
+# If using an Apple Magic Mouse 2 show additional info if the battery level is low
+if [[ "$MagicMouse" != "" ]]; then
+  if [[ "$MagicMouse" -le 20 && "$MagicMouse" -ge 11 ]]; then
   echo "🔋Level Low | color=red"
-elif [ $MAGIC_MOUSE2 -le 10 ]; then
+elif [ "$MagicMouse" -le 10 ]; then
   echo "🔋Level Critical | color=red"
   echo "⚡️Charge Required | color=red"
   fi
