@@ -34,18 +34,28 @@ imageMacPro2013='iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAA
 #                            Functions                                 #
 ########################################################################
 
+# Find correct format for real name of logged in user
 function getRealName ()
 {
-# Find correct format for real name of logged in user
-loggedInUserUID=$(id -u "$loggedInUser")
-if [[ "$loggedInUser" =~ "admin" ]];then
-	userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk '{print $1, $2, $3}' | sed s/,//)
+# If Jamf Connect is installed try to get the value from the Jamf Connect state settings
+if [[ -f "/Users/${loggedInUser}/Library/Preferences/com.jamf.connect.state.plist" ]]; then
+	userRealName=$(sudo -u "$loggedInUser" defaults read com.jamf.connect.state UserCN 2>/dev/null)
+	if [[ "$userRealName" == "" ]]; then
+		# If no value is found then use the value from Directory Service
+		userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk '{print $2, $1}' | sed s/,//)
+	fi
 else
-	if [[ "$loggedInUserUID" -lt "1000" ]]; then
-		userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk '{print $1, $2}' | sed s/,//)
-  	else
-    	userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk '{print $2, $1}' | sed s/,//)
-  	fi
+	# Logged in users ID
+	loggedInUserUID=$(id -u "$loggedInUser")
+	if [[ "$loggedInUser" =~ "admin" ]];then
+		userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk '{print $1, $2, $3}' | sed s/,//)
+	else
+		if [[ "$loggedInUserUID" -lt "1000" ]]; then
+			userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk '{print $1, $2}' | sed s/,//)
+  		else
+    		userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk '{print $2, $1}' | sed s/,//)
+  		fi
+	fi
 fi
 }
 
