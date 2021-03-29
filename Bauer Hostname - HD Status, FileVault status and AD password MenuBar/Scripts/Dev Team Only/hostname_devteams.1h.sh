@@ -42,18 +42,18 @@ if [[ -f "/Users/${loggedInUser}/Library/Preferences/com.jamf.connect.state.plis
 	userRealName=$(sudo -u "$loggedInUser" defaults read com.jamf.connect.state UserCN 2>/dev/null)
 	if [[ "$userRealName" == "" ]]; then
 		# If no value is found then use the value from Directory Service
-		userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk '{print $2, $1}' | sed s/,//)
+		userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk -F, '{print $2, $1}' | xargs)
 	fi
 else
 	# Logged in users ID
-	loggedInUserUID=$(id -u "$loggedInUser")
+	loggedInUserID=$(id -u "$loggedInUser")
 	if [[ "$loggedInUser" =~ "admin" ]];then
-		userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk '{print $1, $2, $3}' | sed s/,//)
+		userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk -F, '{print $1, $2, $3}' | xargs)
 	else
-		if [[ "$loggedInUserUID" -lt "1000" ]]; then
-			userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk '{print $1, $2}' | sed s/,//)
+		if [[ "$loggedInUserID" -lt "1000" ]]; then
+			userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk -F, '{print $1, $2}' | xargs)
   		else
-    		userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk '{print $2, $1}' | sed s/,//)
+    		userRealName=$(dscl . -read /Users/"$loggedInUser" | grep -A1 "RealName:" | sed -n '2p' | awk -F, '{print $2, $1}' | xargs)
   		fi
 	fi
 fi
