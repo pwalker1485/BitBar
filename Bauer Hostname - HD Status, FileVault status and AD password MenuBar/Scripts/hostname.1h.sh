@@ -37,7 +37,7 @@ else
 	macHDPercentUsed=$(df -g / | tail -1 | awk '{print $5}')
 fi
 # Get Mac uptime in days only
-upTimeBasic=$(uptime | awk '{ print $3, $4 }' | grep "days" | sed 's/days/ /;s/,/ /g')
+upTimeBasic=$(uptime 2>/dev/null | awk '{print $3, $4}' | grep "days" | sed 's/days/ /;s/,/ /g' | xargs)
 # Check for Kernal Panics
 kernelPanic=$([ -f /Library/Logs/DiagnosticReports/*.panic ] && echo "Yes" || echo "No")
 # Check SMART status
@@ -183,21 +183,19 @@ fi
 
 function menuFV ()
 {
-# Display FileVault status (MacBooks only)
-if [[ "$macModel" =~ "MacBook" ]]; then
-	fvStatus=$(fdesetup status | grep "FileVault" | head -1)
-    fvEncryptionStatus=$(fdesetup status | grep "Encryption")
-    fvDecryptionStatus=$(fdesetup status | grep "Decryption")
-    if [[ "$fvStatus" == "FileVault is On." ]]; then
-        echo "✅ Encryption On |color=green"
-        if [[ -n "$fvEncryptionStatus" ]]; then
-            echo "⌛️ $fvEncryptionStatus"
-        fi
-    else
-        echo "⚠️ Encryption Off |color=red"
-        if [[ -n "$fvDecryptionStatus" ]]; then
-            echo "⌛️ $fvDecryptionStatus"
-        fi
+# Display FileVault status
+fvStatus=$(fdesetup status | awk '/FileVault is/{print $3}' | tr -d .)
+fvEncryptionStatus=$(fdesetup status | grep "Encryption")
+fvDecryptionStatus=$(fdesetup status | grep "Decryption")
+if [[ "$fvStatus" == "On" ]]; then
+    echo "✅ Encryption On |color=green"
+    if [[ -n "$fvEncryptionStatus" ]]; then
+        echo "⌛️ $fvEncryptionStatus"
+    fi
+else
+    echo "⚠️ Encryption Off |color=red"
+    if [[ -n "$fvDecryptionStatus" ]]; then
+        echo "⌛️ $fvDecryptionStatus"
     fi
 fi
 }

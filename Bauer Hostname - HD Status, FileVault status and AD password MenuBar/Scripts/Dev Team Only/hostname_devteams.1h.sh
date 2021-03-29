@@ -74,21 +74,19 @@ echo "IP Address" $ipAddresses
 
 function menuFV ()
 {
-# Display FileVault status (MacBooks only)
-if [[ "$macModel" =~ "MacBook" ]]; then
-	fvStatus=$(fdesetup status | grep "FileVault" | head -1)
-    fvEncryptionStatus=$(fdesetup status | grep "Encryption")
-    fvDecryptionStatus=$(fdesetup status | grep "Decryption")
-    if [[ "$fvStatus" == "FileVault is On." ]]; then
-        echo "✅ Encryption On |color=green"
-        if [[ -n "$fvEncryptionStatus" ]]; then
-            echo "⌛️ $fvEncryptionStatus"
-        fi
-    else
-        echo "⚠️ Encryption Off |color=red"
-        if [[ -n "$fvDecryptionStatus" ]]; then
-            echo "⌛️ $fvDecryptionStatus"
-        fi
+# Display FileVault status
+fvStatus=$(fdesetup status | awk '/FileVault is/{print $3}' | tr -d .)
+fvEncryptionStatus=$(fdesetup status | grep "Encryption")
+fvDecryptionStatus=$(fdesetup status | grep "Decryption")
+if [[ "$fvStatus" == "On" ]]; then
+    echo "✅ Encryption On |color=green"
+    if [[ -n "$fvEncryptionStatus" ]]; then
+        echo "⌛️ $fvEncryptionStatus"
+    fi
+else
+    echo "⚠️ Encryption Off |color=red"
+    if [[ -n "$fvDecryptionStatus" ]]; then
+        echo "⌛️ $fvDecryptionStatus"
     fi
 fi
 }
