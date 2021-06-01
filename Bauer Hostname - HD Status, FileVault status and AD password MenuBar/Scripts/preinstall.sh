@@ -98,9 +98,9 @@ else
         echo "Killing the BitBarDistro process..."
         while [[ "$bitbarDistro" != "" ]]; do
             killall -9 "BitBarDistro" 2>/dev/null
-        sleep 2
-        # re-populate variable
-        bitbarDistro=$(pgrep "BitBarDistro")
+            sleep 2
+            # re-populate variable
+            bitbarDistro=$(pgrep "BitBarDistro")
         done
         echo "BitBarDistro killed"
     fi
